@@ -1,33 +1,35 @@
 import { motion } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
-import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
-import 'react-circular-progressbar/dist/styles.css';
 import { Slider, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 
 const StressLevelPrediction = () => {
   const [formData, setFormData] = useState({
+    Age: 20,
+    Course: 'Computer Science',
     Gender: 'Male',
-    Age: 35,
-    Occupation: 'Software Engineer',
-    Sleep_Duration: 7.0,
-    BMI_Category: 'Normal',
-    Heart_Rate: 70,
-    Daily_Steps: 5000,
-    Systolic_BP: 120
+    CGPA: 3.5,
+    Depression_Score: 2,
+    Anxiety_Score: 2,
+    Sleep_Quality: 3,
+    Physical_Activity: 2,
+    Diet_Quality: 3,
+    Social_Support: 'Medium',
+    Relationship_Status: 'Single',
+    Substance_Use: 'No',
+    Counseling_Service_Use: 'No',
+    Family_History: 'No',
+    Chronic_Illness: 'No',
+    Financial_Stress: 2,
+    Extracurricular_Involvement: 'Yes',
+    Semester_Credit_Load: 15,
+    Residence_Type: 'On-Campus',
+    Stress_Level: 0 // This is for feature engineering
   });
   
   const [prediction, setPrediction] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  
-  // Predefined values from dataset
-  const occupations = [
-    'Software Engineer', 'Doctor', 'Accountant', 'Teacher', 'Manager', 
-    'Engineer', 'Sales Representative', 'Salesperson', 'Lawyer', 'Nurse', 'Scientist'
-  ];
-  
-  const bmiCategories = ['Underweight', 'Normal', 'Overweight', 'Obese'];
   
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -44,19 +46,19 @@ const StressLevelPrediction = () => {
     setError(null);
     
     try {
-      // Transform data format for API
-      const transformedData = {
-        Gender: formData.Gender === 'Male' ? 1 : 0,
-        Age: parseInt(formData.Age),
-        Occupation: getOccupationCode(formData.Occupation),
-        Sleep_Duration: parseFloat(formData.Sleep_Duration),
-        BMI_Category: getBmiCategoryCode(formData.BMI_Category),
-        Heart_Rate: parseInt(formData.Heart_Rate),
-        Daily_Steps: parseInt(formData.Daily_Steps),
-        Systolic_BP: parseInt(formData.Systolic_BP)
-      };
+      // Convert numeric inputs from strings to numbers
+      const processedData = {};
+      for (const [key, value] of Object.entries(formData)) {
+        if (['Age', 'CGPA', 'Depression_Score', 'Anxiety_Score', 'Sleep_Quality', 
+             'Physical_Activity', 'Diet_Quality', 'Financial_Stress', 
+             'Semester_Credit_Load', 'Stress_Level'].includes(key)) {
+          processedData[key] = parseFloat(value);
+        } else {
+          processedData[key] = value;
+        }
+      }
       
-      const response = await axios.post('http://localhost:5001/api/predict', transformedData);
+      const response = await axios.post('http://localhost:5001/api/predict', processedData);
       setPrediction(response.data);
     } catch (err) {
       console.error('Error making prediction:', err);
@@ -66,50 +68,13 @@ const StressLevelPrediction = () => {
     }
   };
   
-  const getOccupationCode = (occupation) => {
-    const occupationMap = {
-      'Scientist': 0, 
-      'Doctor': 1, 
-      'Accountant': 2, 
-      'Teacher': 3, 
-      'Manager': 4, 
-      'Engineer': 5,
-      'Sales Representative': 6, 
-      'Salesperson': 7, 
-      'Lawyer': 8, 
-      'Software Engineer': 9, 
-      'Nurse': 10
-    };
-    return occupationMap[occupation] || 0;
-  };
-  
-  const getBmiCategoryCode = (category) => {
-    const bmiMap = {'Underweight': 1, 'Normal': 2, 'Overweight': 3, 'Obese': 3};
-    return bmiMap[category] || 2;
-  };
-  
   const getStressLevelColor = (level) => {
-    if (level <= 4) return '#4CAF50'; // green
-    if (level <= 6) return '#FF9800'; // orange
-    return '#F44336'; // red
-  };
-  
-  const getStressDescription = (level) => {
-    if (level <= 4) return 'Low';
-    if (level <= 6) return 'Moderate';
-    return 'High';
-  };
-
-  // Field description tooltips
-  const fieldDescriptions = {
-    Gender: "Biological sex affects stress response mechanisms",
-    Age: "Age influences physiological stress response and coping mechanisms",
-    Occupation: "Different professions have varying stress levels",
-    Sleep_Duration: "Quality sleep is essential for stress management",
-    BMI_Category: "Body Mass Index classification relates to overall health",
-    Heart_Rate: "Resting heart rate can indicate stress levels",
-    Daily_Steps: "Physical activity helps reduce stress",
-    Systolic_BP: "The top number in blood pressure reading"
+    switch(level) {
+      case 'Low': return 'bg-green-100 text-green-800';
+      case 'Medium': return 'bg-yellow-100 text-yellow-800';
+      case 'High': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
   };
   
   return (
@@ -119,10 +84,10 @@ const StressLevelPrediction = () => {
       transition={{ duration: 0.5 }}
       className="bg-white p-6 md:p-8 rounded-xl shadow-lg max-w-6xl mx-auto my-8"
     >
-      <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6 text-center">Stress Level Predictor</h1>
+      <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6 text-center">Student Stress Level Prediction</h1>
       <p className="text-gray-600 mb-8 text-center max-w-3xl mx-auto">
-        This tool uses a Random Forest machine learning model trained on health and lifestyle data to predict stress levels.
-        Adjust the parameters below to see how different factors affect your predicted stress level.
+        Fill out the form below to predict your stress level based on various factors.
+        Adjust the parameters to see how different factors affect your predicted stress level.
       </p>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -130,146 +95,160 @@ const StressLevelPrediction = () => {
           <h2 className="text-xl font-semibold text-gray-800 mb-6">Personal Information</h2>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Gender Selection */}
-              <div className="relative">
-                <FormControl fullWidth>
-                  <InputLabel id="gender-label">Gender</InputLabel>
-                  <Select
-                    labelId="gender-label"
-                    name="Gender"
-                    value={formData.Gender}
-                    label="Gender"
-                    onChange={handleChange}
-                  >
-                    <MenuItem value="Male">Male</MenuItem>
-                    <MenuItem value="Female">Female</MenuItem>
-                  </Select>
-                </FormControl>
-              </div>
-              
-              {/* Age Slider */}
-              <div className="relative">
+              {/* Age */}
+              <div>
                 <p className="text-sm font-medium text-gray-700 mb-2">Age: {formData.Age}</p>
                 <Slider
                   value={formData.Age}
                   onChange={(_, value) => handleSliderChange('Age', value)}
-                  min={25}
+                  min={18}
                   max={60}
                   step={1}
                   valueLabelDisplay="auto"
                 />
               </div>
               
-              {/* Occupation Selection */}
-              <div className="relative">
-                <FormControl fullWidth>
-                  <InputLabel id="occupation-label">Occupation</InputLabel>
-                  <Select
-                    labelId="occupation-label"
-                    name="Occupation"
-                    value={formData.Occupation}
-                    label="Occupation"
-                    onChange={handleChange}
-                  >
-                    {occupations.map(occupation => (
-                      <MenuItem key={occupation} value={occupation}>{occupation}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </div>
+              {/* Gender */}
+              <FormControl fullWidth>
+                <InputLabel id="gender-label">Gender</InputLabel>
+                <Select
+                  labelId="gender-label"
+                  id="gender"
+                  name="Gender"
+                  value={formData.Gender}
+                  label="Gender"
+                  onChange={handleChange}
+                >
+                  <MenuItem value="Male">Male</MenuItem>
+                  <MenuItem value="Female">Female</MenuItem>
+                  <MenuItem value="Other">Other</MenuItem>
+                </Select>
+              </FormControl>
               
-              {/* BMI Category */}
-              <div className="relative">
-                <FormControl fullWidth>
-                  <InputLabel id="bmi-label">BMI Category</InputLabel>
-                  <Select
-                    labelId="bmi-label"
-                    name="BMI_Category"
-                    value={formData.BMI_Category}
-                    label="BMI Category"
-                    onChange={handleChange}
-                  >
-                    {bmiCategories.map(category => (
-                      <MenuItem key={category} value={category}>{category}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+              {/* Course */}
+              <FormControl fullWidth>
+                <InputLabel id="course-label">Course</InputLabel>
+                <Select
+                  labelId="course-label"
+                  id="course"
+                  name="Course"
+                  value={formData.Course}
+                  label="Course"
+                  onChange={handleChange}
+                >
+                  <MenuItem value="Computer Science">Computer Science</MenuItem>
+                  <MenuItem value="Engineering">Engineering</MenuItem>
+                  <MenuItem value="Business">Business</MenuItem>
+                  <MenuItem value="Arts">Arts</MenuItem>
+                  <MenuItem value="Medicine">Medicine</MenuItem>
+                  <MenuItem value="Science">Science</MenuItem>
+                  <MenuItem value="Other">Other</MenuItem>
+                </Select>
+              </FormControl>
+              
+              {/* CGPA */}
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">CGPA: {formData.CGPA}</p>
+                <Slider
+                  value={formData.CGPA}
+                  onChange={(_, value) => handleSliderChange('CGPA', value)}
+                  min={0}
+                  max={4.0}
+                  step={0.1}
+                  valueLabelDisplay="auto"
+                />
               </div>
             </div>
             
-            <h2 className="text-xl font-semibold text-gray-800 mb-4 mt-6">Health Metrics</h2>
+            <h2 className="text-xl font-semibold text-gray-800 mb-4 mt-6">Mental Health Indicators</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Sleep Duration */}
-              <div className="relative">
-                <p className="text-sm font-medium text-gray-700 mb-2">Sleep Duration: {formData.Sleep_Duration} hours</p>
+              {/* Depression Score */}
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">Depression Score: {formData.Depression_Score}</p>
                 <Slider
-                  value={formData.Sleep_Duration}
-                  onChange={(_, value) => handleSliderChange('Sleep_Duration', value)}
-                  min={5}
-                  max={9}
-                  step={0.1}
-                  valueLabelDisplay="auto"
-                  marks={[
-                    { value: 6, label: '6h' },
-                    { value: 7, label: '7h' },
-                    { value: 8, label: '8h' }
-                  ]}
-                />
-              </div>
-              
-              {/* Heart Rate */}
-              <div className="relative">
-                <p className="text-sm font-medium text-gray-700 mb-2">Heart Rate: {formData.Heart_Rate} bpm</p>
-                <Slider
-                  value={formData.Heart_Rate}
-                  onChange={(_, value) => handleSliderChange('Heart_Rate', value)}
-                  min={60}
-                  max={90}
+                  value={formData.Depression_Score}
+                  onChange={(_, value) => handleSliderChange('Depression_Score', value)}
+                  min={0}
+                  max={5}
                   step={1}
                   valueLabelDisplay="auto"
                   marks={[
-                    { value: 65, label: '65' },
-                    { value: 75, label: '75' },
-                    { value: 85, label: '85' }
+                    { value: 0, label: '0' },
+                    { value: 5, label: '5' }
                   ]}
                 />
               </div>
               
-              {/* Daily Steps */}
-              <div className="relative">
-                <p className="text-sm font-medium text-gray-700 mb-2">Daily Steps: {formData.Daily_Steps}</p>
+              {/* Anxiety Score */}
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">Anxiety Score: {formData.Anxiety_Score}</p>
                 <Slider
-                  value={formData.Daily_Steps}
-                  onChange={(_, value) => handleSliderChange('Daily_Steps', value)}
-                  min={3000}
-                  max={10000}
-                  step={100}
-                  valueLabelDisplay="auto"
-                  marks={[
-                    { value: 4000, label: '4k' },
-                    { value: 7000, label: '7k' },
-                    { value: 10000, label: '10k' }
-                  ]}
-                />
-              </div>
-              
-              {/* Systolic BP */}
-              <div className="relative">
-                <p className="text-sm font-medium text-gray-700 mb-2">Systolic BP: {formData.Systolic_BP} mmHg</p>
-                <Slider
-                  value={formData.Systolic_BP}
-                  onChange={(_, value) => handleSliderChange('Systolic_BP', value)}
-                  min={110}
-                  max={150}
+                  value={formData.Anxiety_Score}
+                  onChange={(_, value) => handleSliderChange('Anxiety_Score', value)}
+                  min={0}
+                  max={5}
                   step={1}
                   valueLabelDisplay="auto"
                   marks={[
-                    { value: 120, label: '120' },
-                    { value: 130, label: '130' },
-                    { value: 140, label: '140' }
+                    { value: 0, label: '0' },
+                    { value: 5, label: '5' }
                   ]}
                 />
               </div>
+              
+              {/* Sleep Quality */}
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">Sleep Quality: {formData.Sleep_Quality}</p>
+                <Slider
+                  value={formData.Sleep_Quality}
+                  onChange={(_, value) => handleSliderChange('Sleep_Quality', value)}
+                  min={0}
+                  max={5}
+                  step={1}
+                  valueLabelDisplay="auto"
+                  marks={[
+                    { value: 0, label: '0' },
+                    { value: 5, label: '5' }
+                  ]}
+                />
+              </div>
+
+
+              {/* Current Stress Level - Renamed */}
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">Pressure Index: {formData.Stress_Level}</p>
+                <Slider
+                  value={formData.Stress_Level}
+                  onChange={(_, value) => handleSliderChange('Stress_Level', value)}
+                  min={0}
+                  max={5}
+                  step={1}
+                  valueLabelDisplay="auto"
+                  marks={[
+                    { value: 0, label: '0' },
+                    { value: 5, label: '5' }
+                  ]}
+                />
+              </div>
+              
+              {/* Financial Stress */}
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">Financial Stress: {formData.Financial_Stress}</p>
+                <Slider
+                  value={formData.Financial_Stress}
+                  onChange={(_, value) => handleSliderChange('Financial_Stress', value)}
+                  min={0}
+                  max={5}
+                  step={1}
+                  valueLabelDisplay="auto"
+                  marks={[
+                    { value: 0, label: '0' },
+                    { value: 5, label: '5' }
+                  ]}
+                />
+              </div>
+              
+              
             </div>
             
             <motion.button
@@ -295,20 +274,7 @@ const StressLevelPrediction = () => {
           {loading && (
             <div className="flex flex-col items-center justify-center h-64">
               <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
-              <p className="mt-4 text-gray-600">Analyzing your data using Random Forest model...</p>
-            </div>
-          )}
-          
-          {!loading && !prediction && !error && (
-            <div className="flex flex-col items-center justify-center h-64">
-              <img 
-                src="/images/mental-health1.png" 
-                alt="Mental Health" 
-                className="h-24 w-24 mb-4 opacity-70"
-              />
-              <p className="text-gray-500 text-center max-w-md">
-                Complete the form and click "Predict Stress Level" to receive a personalized stress assessment based on our Random Forest model.
-              </p>
+              <p className="mt-4 text-gray-600">Analyzing your data...</p>
             </div>
           )}
           
@@ -319,115 +285,91 @@ const StressLevelPrediction = () => {
               transition={{ duration: 0.5 }}
               className="space-y-6"
             >
-              <div className="flex flex-col items-center">
-                <h2 className="text-xl font-semibold text-gray-800 mb-6">Your Stress Level Assessment</h2>
-                
-                <div className="w-40 h-40 mb-4">
-                  <CircularProgressbar
-                    value={prediction.stress_level}
-                    maxValue={10}
-                    text={`${prediction.stress_level}`}
-                    styles={buildStyles({
-                      textSize: '1.5rem',
-                      pathColor: getStressLevelColor(prediction.stress_level),
-                      textColor: getStressLevelColor(prediction.stress_level),
-                      trailColor: '#d6d6d6',
-                    })}
-                  />
-                </div>
-                
-                <div className={`text-center px-4 py-2 rounded-full font-semibold text-white mb-2`}
-                     style={{ backgroundColor: getStressLevelColor(prediction.stress_level) }}>
-                  {getStressDescription(prediction.stress_level)} Stress Level
+              <div className="text-center">
+                <h2 className="text-xl font-semibold text-gray-800 mb-2">Prediction Result</h2>
+                <div className={`inline-block px-6 py-3 rounded-full font-bold text-lg ${getStressLevelColor(prediction.stress_level)}`}>
+                  {prediction.stress_level} Stress Level
                 </div>
               </div>
               
-              <div className="border-t border-gray-200 pt-6 mt-6">
-                <h3 className="text-lg font-medium text-gray-800 mb-4">Personalized Recommendations</h3>
-                <ul className="space-y-3">
-                  {prediction.stress_level <= 4 ? (
+              <div>
+                <h3 className="text-lg font-medium text-gray-800 mb-3">Probability Distribution</h3>
+                <div className="space-y-4">
+                  {Object.entries(prediction.probabilities).map(([level, probability]) => (
+                    <div key={level}>
+                      <div className="flex justify-between text-sm text-gray-600 mb-1">
+                        <span>{level} Stress</span>
+                        <span>{probability}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2.5">
+                        <div 
+                          className={`h-2.5 rounded-full ${
+                            level === 'Low' ? 'bg-green-500' : 
+                            level === 'Medium' ? 'bg-yellow-500' : 'bg-red-500'
+                          }`}
+                          style={{ width: `${probability}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="bg-blue-50 p-4 rounded-md">
+                <h3 className="text-lg font-medium text-blue-800 mb-2">What This Means</h3>
+                <p className="text-blue-700">
+                  {prediction.stress_level === 'Low' && 
+                    'Your stress levels appear to be well-managed. Continue practicing healthy coping strategies and maintain your current routines.'}
+                  {prediction.stress_level === 'Medium' && 
+                    'You may be experiencing moderate stress. Consider incorporating more stress-reduction techniques into your daily routine, such as mindfulness, exercise, or better time management.'}
+                  {prediction.stress_level === 'High' && 
+                    'Your stress levels appear to be high. It would be beneficial to speak with a mental health professional for additional support and develop a comprehensive stress management plan.'}
+                </p>
+              </div>
+              
+              <div className="bg-gray-50 p-4 rounded-md">
+                <h3 className="text-lg font-medium text-gray-800 mb-2">Recommendations</h3>
+                <ul className="list-disc pl-5 space-y-1 text-gray-700">
+                  {prediction.stress_level === 'Low' && (
                     <>
-                      <li className="flex items-start">
-                        <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-green-100 text-green-800 mr-3 flex-shrink-0">✓</span>
-                        <span>Maintain your current health practices</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-green-100 text-green-800 mr-3 flex-shrink-0">✓</span>
-                        <span>Include regular exercise in your routine</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-green-100 text-green-800 mr-3 flex-shrink-0">✓</span>
-                        <span>Continue healthy sleep habits</span>
-                      </li>
+                      <li>Continue your current healthy habits</li>
+                      <li>Check in regularly to monitor your stress levels</li>
+                      <li>Build resilience for future stressful situations</li>
                     </>
-                  ) : prediction.stress_level <= 6 ? (
+                  )}
+                  {prediction.stress_level === 'Medium' && (
                     <>
-                      <li className="flex items-start">
-                        <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-yellow-100 text-yellow-800 mr-3 flex-shrink-0">!</span>
-                        <span>Practice mindfulness or meditation for 10-15 minutes daily</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-yellow-100 text-yellow-800 mr-3 flex-shrink-0">!</span>
-                        <span>Ensure consistent sleep schedule of 7-8 hours</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-yellow-100 text-yellow-800 mr-3 flex-shrink-0">!</span>
-                        <span>Consider taking short breaks during work hours</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-yellow-100 text-yellow-800 mr-3 flex-shrink-0">!</span>
-                        <span>Increase physical activity to at least 7000 steps per day</span>
-                      </li>
+                      <li>Practice daily relaxation techniques</li>
+                      <li>Consider adjusting your course workload if possible</li>
+                      <li>Ensure you're getting adequate sleep and exercise</li>
+                      <li>Connect with friends and family for support</li>
                     </>
-                  ) : (
+                  )}
+                  {prediction.stress_level === 'High' && (
                     <>
-                      <li className="flex items-start">
-                        <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-red-100 text-red-800 mr-3 flex-shrink-0">!</span>
-                        <span>Consider consulting a healthcare professional</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-red-100 text-red-800 mr-3 flex-shrink-0">!</span>
-                        <span>Implement stress reduction techniques like deep breathing</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-red-100 text-red-800 mr-3 flex-shrink-0">!</span>
-                        <span>Prioritize sleep hygiene and aim for 8 hours of sleep</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-red-100 text-red-800 mr-3 flex-shrink-0">!</span>
-                        <span>Increase physical activity and consider cardiovascular exercise</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-red-100 text-red-800 mr-3 flex-shrink-0">!</span>
-                        <span>Evaluate work-life balance and consider lifestyle adjustments</span>
-                      </li>
+                      <li>Schedule a visit with your university's counseling services</li>
+                      <li>Discuss your workload with academic advisors</li>
+                      <li>Prioritize self-care and stress reduction activities</li>
+                      <li>Consider joining a support group</li>
+                      <li>Develop a structured stress management plan</li>
                     </>
                   )}
                 </ul>
               </div>
-              
-              <div className="bg-blue-50 p-4 rounded-md">
-                <h3 className="text-lg font-medium text-blue-800 mb-2">Key Health Insights</h3>
-                <p className="text-blue-700 text-sm">
-                  {prediction.stress_level <= 4 ? 
-                    "Your predicted stress level is low. Your lifestyle choices appear to be supporting good mental health." :
-                   prediction.stress_level <= 6 ?
-                    "Your predicted stress level is moderate. Some aspects of your lifestyle may be contributing to increased stress." :
-                    "Your predicted stress level is high. Several aspects of your current health metrics suggest significant stress impact."
-                  }
-                  
-                  {formData.Sleep_Duration < 7 ? 
-                    " Your sleep duration is below recommended levels, which may contribute to stress." : ""}
-                    
-                  {formData.Daily_Steps < 5000 ? 
-                    " Increasing your daily steps could help reduce stress levels." : ""}
-                    
-                  {formData.Heart_Rate > 80 ? 
-                    " Your elevated heart rate may indicate physiological stress." : ""}
-                </p>
-              </div>
-              
             </motion.div>
+          )}
+          
+          {!prediction && !error && !loading && (
+            <div className="flex flex-col items-center justify-center h-64">
+              <img 
+                src="images/mental-health1.png" 
+                alt="Mental Health" 
+                className="w-24 h-24 mb-4 opacity-60"
+              />
+              <p className="text-gray-500 text-center max-w-md">
+                Complete the form and click "Predict Stress Level" to receive a personalized stress assessment based on our machine learning model.
+              </p>
+            </div>
           )}
         </div>
       </div>
